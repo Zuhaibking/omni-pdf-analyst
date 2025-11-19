@@ -1,12 +1,40 @@
-// Update this page (the content is just a fallback if you fail to update the page)
+import { useState, useRef } from "react";
+import { HeroSection } from "@/components/HeroSection";
+import { PdfUploader } from "@/components/PdfUploader";
+import { AnalysisDisplay } from "@/components/AnalysisDisplay";
 
 const Index = () => {
+  const [pdfData, setPdfData] = useState<{ text: string; fileName: string } | null>(null);
+  const uploaderRef = useRef<HTMLDivElement>(null);
+
+  const handleGetStarted = () => {
+    uploaderRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
+
+  const handlePdfAnalyze = (text: string, fileName: string) => {
+    setPdfData({ text, fileName });
+  };
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background">
-      <div className="text-center">
-        <h1 className="mb-4 text-4xl font-bold">Welcome to Your Blank App</h1>
-        <p className="text-xl text-muted-foreground">Start building your amazing project here!</p>
+    <div className="min-h-screen">
+      <HeroSection onGetStarted={handleGetStarted} />
+      
+      <div ref={uploaderRef}>
+        <PdfUploader onPdfAnalyze={handlePdfAnalyze} />
       </div>
+
+      {pdfData && (
+        <AnalysisDisplay 
+          fileName={pdfData.fileName} 
+          pdfText={pdfData.text} 
+        />
+      )}
+
+      <footer className="py-8 border-t border-border">
+        <div className="container text-center text-sm text-muted-foreground">
+          <p>© 2025 ULTRA LEXIPDF OMEGA - Advanced AI PDF Analysis Engine</p>
+        </div>
+      </footer>
     </div>
   );
 };
