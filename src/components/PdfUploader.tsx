@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 
 interface PdfUploaderProps {
-  onPdfAnalyze: (text: string, fileName: string) => void;
+  onPdfAnalyze: (data: any) => void;
 }
 
 export const PdfUploader = ({ onPdfAnalyze }: PdfUploaderProps) => {
@@ -54,49 +54,52 @@ export const PdfUploader = ({ onPdfAnalyze }: PdfUploaderProps) => {
 
     setIsProcessing(true);
     
-    // Simulate PDF text extraction
-    // In a real app, you'd use a library like pdf.js or send to backend
-    setTimeout(() => {
-      const mockPdfText = `Sample PDF Content from: ${file.name}
+    try {
+      console.log('Uploading PDF for analysis...');
       
-This is a simulated PDF extraction. In a production environment, this would contain the actual extracted text from the PDF file.
+      const formData = new FormData();
+      formData.append('pdf', file);
+      formData.append('fileName', file.name);
+      
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/analyze-pdf`,
+        {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+          },
+          body: formData,
+        }
+      );
 
-CHAPTER 1: Introduction to Advanced Topics
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to analyze PDF');
+      }
 
-This chapter introduces fundamental concepts that will be explored throughout this document. The main focus areas include:
+      const data = await response.json();
+      
+      if (!data.success) {
+        throw new Error(data.error || 'PDF analysis failed');
+      }
 
-1. Theoretical Frameworks
-Understanding the theoretical underpinnings is crucial for applying concepts in practical scenarios. This section covers multiple paradigms and their applications.
-
-2. Methodological Approaches  
-Various methodologies are discussed, including quantitative and qualitative approaches. Each method has specific use cases and limitations.
-
-3. Key Definitions
-- Term A: A fundamental concept that describes...
-- Term B: An advanced principle used in...
-- Formula X: E = mc², demonstrating energy-mass equivalence
-
-CHAPTER 2: Detailed Analysis
-
-This section provides in-depth exploration of the topics introduced earlier. Multiple case studies are presented to illustrate practical applications.
-
-Important Findings:
-• Finding 1: Research shows significant correlation between variables
-• Finding 2: Data analysis reveals patterns in complex systems
-• Finding 3: Experimental results confirm theoretical predictions
-
-CONCLUSION
-
-The document synthesizes various concepts and demonstrates their interconnections. Future research directions are suggested for further exploration.`;
-
-      onPdfAnalyze(mockPdfText, file.name);
-      setIsProcessing(false);
+      console.log('PDF analysis complete:', data);
+      onPdfAnalyze({ ...data, fileName: file.name });
       
       toast({
         title: "PDF Analyzed",
         description: "Your document has been processed successfully",
       });
-    }, 1500);
+    } catch (error) {
+      console.error('Error processing PDF:', error);
+      toast({
+        title: "Analysis Failed",
+        description: error instanceof Error ? error.message : "Failed to analyze PDF",
+        variant: "destructive",
+      });
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
   return (
